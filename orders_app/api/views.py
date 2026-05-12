@@ -7,10 +7,12 @@ from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.mixins import UpdateModelMixin, DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Local
 from offers_app.models import OfferDetail
 from orders_app.models import Order
+from profiles_app.models import UserProfile
 from .permissions import IsCustomerUser, IsOrderBusinessUser, IsStaffUser
 from .serializers import OrderSerializer
 
@@ -89,3 +91,25 @@ class OrderUpdateDeleteView(UpdateModelMixin, DestroyModelMixin, GenericAPIView)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class OrderCountView(APIView):
+    """GET /api/order-count/{business_user_id}/ — in_progress order count for a business user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        get_object_or_404(UserProfile, user_id=business_user_id, type='business')
+        count = Order.objects.filter(business_user_id=business_user_id, status='in_progress').count()
+        return Response({'order_count': count})
+
+
+class CompletedOrderCountView(APIView):
+    """GET /api/completed-order-count/{business_user_id}/ — completed order count for a business user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        get_object_or_404(UserProfile, user_id=business_user_id, type='business')
+        count = Order.objects.filter(business_user_id=business_user_id, status='completed').count()
+        return Response({'completed_order_count': count})
